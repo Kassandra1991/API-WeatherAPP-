@@ -6,7 +6,7 @@
 //
 
 import UIKit
-
+import CoreLocation
 
 class ViewController: UIViewController {
 
@@ -16,6 +16,13 @@ class ViewController: UIViewController {
     @IBOutlet weak var feelsLiketemperatureLabel: UILabel!
     
     var networkWeatherManager = NetworkWeatherManager()
+    lazy var locationManager: CLLocationManager = {
+        let lm = CLLocationManager()
+        lm.delegate = self
+        lm.desiredAccuracy = kCLLocationAccuracyKilometer
+        lm.requestWhenInUseAuthorization()
+        return lm
+    }()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -24,7 +31,9 @@ class ViewController: UIViewController {
             guard let self = self else { return }
             self.updateInterFace(with: currentWeather)
         }
-        networkWeatherManager.fetchCurrentWeather(for: "Vilnius")
+        if CLLocationManager.locationServicesEnabled() {
+            locationManager.requestLocation()
+        }
     }
 
     @IBAction func searchPressed(_ sender: UIButton) {
@@ -43,5 +52,19 @@ class ViewController: UIViewController {
         }
     }
 }
-
-
+// MARK: - CLLocationManager
+extension ViewController: CLLocationManagerDelegate {
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        guard let location = locations.last else {
+            return
+        }
+        let latitude = location.coordinate.latitude
+        let longitude = location.coordinate.longitude
+        
+        networkWeatherManager.fetchCurrentWeather(for: <#T##String#>)
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        print(error.localizedDescription)
+    }
+}
